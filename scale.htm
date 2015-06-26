@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+
+    <title>Scale.js</title>
+    
+    <!-- START: for jtab -->
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <link type="text/css" rel="stylesheet" href="css/jtab-helper.css"/>
+    <script src="javascripts/jquery.js" type="text/javascript"></script>
+    <script src="javascripts/raphael.js" type="text/javascript"></script>
+    <script src="javascripts/jtab.js" type="text/javascript"></script>
+    <!-- END: for jtab -->
+
+  </head>
+  <body>
+
+<div id="content">
+
+  <p>Enter some notes:</p>
+
+  <input id="notes" size="40" value="A C D G">
+  <input type="button" value="Do it!" onclick="scale_calc($('#notes').val());">
+
+  <br/> <br/>
+  
+  <div id="tabs"><p>Possible scales will be rendered here!</p></div>
+
+  <script type="text/javascript">
+
+  var all_notes = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
+
+  var strings = [ 'e', 'B', 'G', 'D', 'A', 'E' ];
+
+  var scales = [
+    {
+      name: 'minor pentatonic',
+      notes: [3, 5, 7, 10]
+    },
+    {
+      name: 'blues',
+      notes: [3, 5, 6, 7, 10]
+    },
+    {
+      name: 'minor',
+      notes: [2, 3, 5, 7, 8, 10]
+    }
+  ];
+
+  var fretboard_size = 24;
+
+  function scale_calc (param) {
+    var notes = param.split(' ');
+
+    //Search for matching scales
+    var possibleScales = [];
+    scales.forEach(function(scale) {
+
+      all_notes.forEach(function(note) {
+        var scale_notes = [];
+        scale_notes.push(note);
+
+        scale.notes.forEach(function(n){
+          var i = all_notes.indexOf(note) + n;
+          if(i >= all_notes.length)
+            i -= all_notes.length;
+          var note_to_push = all_notes[i];
+          scale_notes.push(note_to_push);
+        });
+
+        if(notes.every(function(n){ return scale_notes.some(function(x){ return x == n}); })){
+          possibleScales.push({
+            name: scale.name + ' ' + note,
+            notes: scale_notes
+          });
+        }
+      });
+    });
+
+    $('#tabs')[0].innerHTML = '';
+    possibleScales.forEach(function(scale){
+      render(scale);
+    });
+  };
+
+  var tabIndex = 0;
+  var tabs = $('#tabs')[0];
+
+  function render(scale){
+    tabs.appendChild(document.createElement("P").appendChild(document.createTextNode(scale.name)));
+    var div = document.createElement("DIV");
+    var id = 'tab_' + tabIndex++;
+    div.id = id;
+    tabs.appendChild(div);
+
+    jtab.render($('#' + id), parse(scale));
+  };
+
+  function playable_frets(scale){
+    var result = [];
+    strings.forEach(function(string){
+      for(var i = 0; i < fretboard_size; i++){
+        var index = all_notes.indexOf(string.toUpperCase()) + i;
+        var number_of_notes = all_notes.length;
+        while(index >= number_of_notes){
+          index -= number_of_notes;
+        }
+        var note = all_notes[index];
+        if(scale.notes.some(function(n) { return n == note})){
+          result.push({
+            string: string,
+            fret: i
+          });
+        }
+      }
+    });
+    return result;
+  };
+
+  function parse(scale){
+    var steps = playable_frets(scale);
+    
+    var result = [];
+    for(var i = 0; i < fretboard_size; i++){
+      var fret = [];
+
+      var fret_notes = steps.filter(function(x){
+        return x.fret == i;
+      });
+
+      fret_notes.forEach(function(note){
+        var str = '$' + note.string + '.' + i;
+        fret.push(str);
+      });
+
+      var fretStr = fret.join('.');
+      result.push(fretStr);
+    }
+
+    var resultStr = result.join('  ') + ' ||';
+    return resultStr;
+    debugger;
+    return '$e.0.$G.0.$D.0.$A.0.$E.0 $B.1 $G.2.$D.2 $e.3.$B.3.$A.3.$E.3';
+  }
+  </script>
+
+  </body>
+</html>
